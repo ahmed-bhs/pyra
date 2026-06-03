@@ -1,5 +1,18 @@
 # Pyra
 
+```
+              /\
+             /  \        E2E          fewer  ·  costly  ·  slow
+            / E2E\       test the whole app through the UI
+           /------\
+          /        \     Integration
+         / Integr.  \    test that units work together
+        /------------\
+       /              \  Unit         more  ·  cheap  ·  fast
+      /     Unit       \ test units in isolation
+     /------------------\
+```
+
 Pyra is a standalone CLI that checks the **shape of your test pyramid** and tells you,
 on a pull request, whether a change is backed by the test levels you expect.
 
