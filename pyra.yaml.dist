@@ -1,0 +1,26 @@
+pyra:
+    enforce_ordering: true
+
+    levels:
+        unit:
+            paths:
+                - tests/Unit
+            min_percentage: 60
+            forbidden_dependencies:
+                - Symfony\Bundle\FrameworkBundle\Test\KernelTestCase
+                - Symfony\Bundle\FrameworkBundle\Test\WebTestCase
+                - Doctrine\ORM\EntityManagerInterface
+                - Doctrine\ORM\EntityManager
+                - Doctrine\DBAL\Connection
+                - Doctrine\Persistence\ManagerRegistry
+                - Zenstruck\Foundry\Test\ResetDatabase
+
+        integration:
+            paths:
+                - tests/Integration
+            max_percentage: 35
+
+        e2e:
+            paths:
+                - tests/Behat
+            max_percentage: 15

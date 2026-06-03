@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage clover="1">
+  <project timestamp="0">
+    <file name="/app/src/Domain/Order.php">
+      <line num="9" type="stmt" count="3"/>
+      <line num="10" type="stmt" count="0"/>
+      <line num="11" type="stmt" count="0"/>
+    </file>
+  </project>
+</coverage>

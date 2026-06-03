@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<coverage line-rate="0.5" version="1.9">
+  <packages>
+    <package name="Acme">
+      <classes>
+        <class name="Order" filename="src/Domain/Order.php">
+          <lines>
+            <line number="9" hits="3"/>
+            <line number="10" hits="0"/>
+            <line number="11" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
