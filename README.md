@@ -77,6 +77,9 @@ pyra:
                 - Doctrine\ORM\EntityManagerInterface
         integration:
             paths: [tests/Integration]
+        e2e:
+            paths: [features]
+            counter: gherkin
 ```
 
 Every key (levels, percentages, counters, the `diff` block, ready-to-copy Symfony and
