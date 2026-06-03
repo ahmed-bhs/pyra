@@ -19,14 +19,16 @@ final class PyramidAnalyzer
     public function analyze(PyramidConfig $pyramidConfig): PyramidReport
     {
         $counts = [];
+        $counterByLevel = [];
         $totalMethods = 0;
         foreach ($pyramidConfig->levels as $levelThreshold) {
             $levelCount = $this->levelScanner->scan($levelThreshold);
             $counts[$levelThreshold->level->value] = $levelCount;
+            $counterByLevel[$levelThreshold->level->value] = $levelThreshold->counter;
             $totalMethods += $levelCount->methods;
         }
 
-        $partialReport = new PyramidReport($counts, $totalMethods, []);
+        $partialReport = new PyramidReport($counts, $totalMethods, [], $counterByLevel);
 
         $violations = [];
         foreach ($pyramidConfig->levels as $levelThreshold) {
@@ -50,7 +52,7 @@ final class PyramidAnalyzer
             $violations = [...$violations, ...$this->orderingViolations($pyramidConfig, $counts)];
         }
 
-        return new PyramidReport($counts, $totalMethods, $violations);
+        return new PyramidReport($counts, $totalMethods, $violations, $counterByLevel);
     }
 
     /**

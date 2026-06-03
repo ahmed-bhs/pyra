@@ -143,6 +143,10 @@ A few things worth knowing before you trust the output:
 - Telling coverage apart *per level* needs one coverage run per suite; a single merged
   file can't say which level hit a line.
 - It counts PHPUnit (`test*` / `#[Test]`) and Gherkin scenarios. Pest isn't counted yet.
+- It classifies tests by **directory**. You map folders to levels; a folder that mixes
+  unit and integration tests in the same place can't be split (a project like
+  api-platform/core, which groups tests by component rather than by level, is only as
+  precise as your paths). Per-test level markers are a possible future addition.
 
 ## License
 

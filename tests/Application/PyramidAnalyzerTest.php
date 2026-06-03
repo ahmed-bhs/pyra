@@ -45,10 +45,12 @@ final class PyramidAnalyzerTest extends TestCase
 
     public function testSignaleUnPourcentageEnDessousDuMinimum(): void
     {
+        // counting fixture = 2 PHPUnit tests, imports fixtures = more PHPUnit
+        // tests; unit's share among PHPUnit levels falls under the 90% minimum.
         $pyramidConfig = new PyramidConfig(
             levels: [
                 new LevelThreshold(level: TestLevel::UNIT, paths: [self::FIXTURES.'/counting'], minPercentage: 90),
-                new LevelThreshold(level: TestLevel::E2E, paths: [self::FIXTURES.'/gherkin'], counter: 'gherkin'),
+                new LevelThreshold(level: TestLevel::INTEGRATION, paths: [self::FIXTURES.'/imports']),
             ],
             enforceOrdering: false,
         );
@@ -57,5 +59,23 @@ final class PyramidAnalyzerTest extends TestCase
 
         $belowMin = array_filter($pyramidReport->violations, static fn (string $violation): bool => str_contains($violation, 'below the required minimum'));
         self::assertNotSame([], $belowMin);
+    }
+
+    public function testLePourcentageNeMelangePasLesUnitesDeComptage(): void
+    {
+        // 2 PHPUnit tests (counting) + 3 Gherkin scenarios; unit must be 100%
+        // of the PHPUnit unit, not 2/5 = 40% mixed with scenarios.
+        $pyramidConfig = new PyramidConfig(
+            levels: [
+                new LevelThreshold(level: TestLevel::UNIT, paths: [self::FIXTURES.'/counting']),
+                new LevelThreshold(level: TestLevel::E2E, paths: [self::FIXTURES.'/gherkin'], counter: 'gherkin'),
+            ],
+            enforceOrdering: false,
+        );
+
+        $pyramidReport = (new PyramidAnalyzer())->analyze($pyramidConfig);
+
+        self::assertSame(100.0, $pyramidReport->percentage(TestLevel::UNIT));
+        self::assertSame(100.0, $pyramidReport->percentage(TestLevel::E2E));
     }
 }
