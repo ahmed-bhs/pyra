@@ -39,13 +39,13 @@ pyra:
 
 ### Counters
 
-- `phpunit` — counts public methods named `test*` or marked `#[Test]`, in `*.php` files.
+- `phpunit`: counts public methods named `test*` or marked `#[Test]`, in `*.php` files.
   Also extracts the classes each test depends on (used for `forbidden_dependencies` and,
   in diff mode, for matching tests to changed classes).
-- `gherkin` — counts `Scenario:` / `Scenario Outline:` in `*.feature` files. Gherkin
+- `gherkin`: counts `Scenario:` / `Scenario Outline:` in `*.feature` files. Gherkin
   files declare no PHP classes, so dependency-based checks do not apply to them.
 
-### `forbidden_dependencies` — the "impure test" check
+### `forbidden_dependencies`: the "impure test" check
 
 A unit test that depends on an integration-only symbol (an `EntityManager`, a
 `KernelTestCase`, a database-reset trait) is really an integration test in the wrong
@@ -63,8 +63,8 @@ pyra:
 ```
 
 When true, Pyra checks the pyramid is not inverted: `unit >= integration >= e2e`. Levels
-counted in different units (PHPUnit methods vs Gherkin scenarios) are **not** compared —
-they are not the same kind of number.
+counted in different units (PHPUnit methods vs Gherkin scenarios) are **not** compared,
+because they are not the same kind of number.
 
 ## Percentages and counting units
 
@@ -92,8 +92,8 @@ pyra:
 |-----|------|---------|---------|
 | `base` | git ref | `HEAD~1` | Ref to diff against. Overridable with `--base`. |
 | `sources` | list | `[]` | Production areas and the test levels they should have. |
-| `sources[].path` | path prefix | — | Matches changed files under this directory. |
-| `sources[].expect` | list of levels | — | Levels a changed class in this area should be tested at. |
+| `sources[].path` | path prefix | (required) | Matches changed files under this directory. |
+| `sources[].expect` | list of levels | (required) | Levels a changed class in this area should be tested at. |
 | `ignore` | list of path prefixes | `[]` | Changes here never require tests (migrations, config, generated code). |
 
 For each changed class under a `sources` path, Pyra checks the whole test suite for a
@@ -157,12 +157,12 @@ pyra:
               expect: [integration]
 ```
 
-> Laravel projects whose tests are written in Pest are not yet counted — Pyra currently
+> Laravel projects whose tests are written in Pest are not yet counted. Pyra currently
 > understands PHPUnit and Gherkin only.
 
 ## A note on test layout
 
 Pyra classifies tests by **directory**: you map folders to levels. A single folder that
-mixes unit and integration tests cannot be split — projects organised by component rather
+mixes unit and integration tests cannot be split. Projects organised by component rather
 than by level are only as precise as the paths you give. Per-test level markers may be
 added later.
