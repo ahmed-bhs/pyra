@@ -16,6 +16,26 @@
 Pyra is a standalone CLI that checks the **shape of your test pyramid** and tells you,
 on a pull request, whether a change is backed by the test levels you expect.
 
+## Background
+
+The Testing Pyramid, devised by Mike Cohn, is a guide for the types of automated tests
+to favour in a project's test suite. It points at the unreliable, slow and costly nature
+of end-to-end tests by placing them at the top, smaller section of the pyramid, and the
+quick, cheap and isolated unit tests at the bottom, largest section.
+
+The Testing Pyramid is only a guide. As the [Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
+article sums up:
+
+> Still, due to its simplicity the essence of the test pyramid serves as a good rule of
+> thumb when it comes to establishing your own test suite. Your best bet is to remember
+> two things from Cohn's original test pyramid:
+>
+> - Write tests with different granularity
+> - The more high-level you get the fewer tests you should have
+
+Pyra enforces exactly those two rules: that tests exist at different granularities for a
+change, and that the higher levels stay smaller.
+
 It is framework-agnostic: it reads files and a YAML config, it does not boot your
 application. Works on Symfony, Laravel, or plain PHP projects.
 
