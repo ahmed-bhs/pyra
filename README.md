@@ -1,5 +1,10 @@
 # Pyra
 
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-ready-000000?logo=symfony&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-ready-FF2D20?logo=laravel&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 ![Testing Pyramid](docs/testing-pyramid.jpg)
 
 > Illustration by [SketchingDev](https://sketchingdev.co.uk).
