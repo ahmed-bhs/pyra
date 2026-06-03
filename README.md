@@ -4,40 +4,26 @@
 
 > Illustration by [SketchingDev](https://sketchingdev.co.uk).
 
-Pyra is a standalone CLI that checks the **shape of your test pyramid** and tells you,
-on a pull request, whether a change is backed by the test levels you expect.
+Pyra looks at your tests and tells you two things: is the overall pyramid the right
+shape, and — on a given pull request — did the code you just changed get tested at the
+level it should be.
 
-## Background
+It doesn't boot your app. It reads files and a YAML config, so it runs the same on
+Symfony, Laravel or a plain PHP project.
 
-The Testing Pyramid, devised by Mike Cohn, is a guide for the types of automated tests
-to favour in a project's test suite. It points at the unreliable, slow and costly nature
-of end-to-end tests by placing them at the top, smaller section of the pyramid, and the
-quick, cheap and isolated unit tests at the bottom, largest section.
+## Why
 
-The Testing Pyramid is only a guide. As the [Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
-article sums up:
+The test pyramid (Mike Cohn) says: lots of small, fast, isolated unit tests at the
+bottom; fewer slow, costly end-to-end tests at the top. The
+[Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
+boils it down to two rules worth keeping:
 
-> Still, due to its simplicity the essence of the test pyramid serves as a good rule of
-> thumb when it comes to establishing your own test suite. Your best bet is to remember
-> two things from Cohn's original test pyramid:
->
 > - Write tests with different granularity
 > - The more high-level you get the fewer tests you should have
 
-Pyra enforces exactly those two rules: that tests exist at different granularities for a
-change, and that the higher levels stay smaller.
-
-It is framework-agnostic: it reads files and a YAML config, it does not boot your
-application. Works on Symfony, Laravel, or plain PHP projects.
-
-Two modes:
-
-- `pyra check` — global: counts tests per level (unit / integration / e2e), checks
-  ratios + ordering, and flags a unit test that **behaves like an integration test**
-  (depends on a forbidden I/O symbol such as an `EntityManager`).
-- `pyra diff` — per pull request: for each **changed class**, reports whether the test
-  levels you expect exist, and (when given coverage XML) how much of the changed lines
-  are covered.
+Most teams agree with this and then drift away from it one PR at a time — a feature
+ships with an end-to-end test and no unit test, a "unit" test quietly spins up the
+database. Pyra is there to notice.
 
 ## Install
 
@@ -45,7 +31,32 @@ Two modes:
 composer require --dev ahmed-bhs/pyra
 ```
 
-## Configuration — `pyra.yaml`
+## The two commands
+
+`pyra check` looks at the whole suite: how many tests live at each level, whether the
+ratios and ordering still make a pyramid, and whether any "unit" test is really an
+integration test in disguise (it depends on something like an `EntityManager`).
+
+`pyra diff` looks at one pull request. For every class you changed, it checks the test
+levels you said that area should have. To do that it searches the *whole* test suite, not
+just the files in the diff — so a test you wrote three months ago still counts, and you
+don't get nagged about a class that's already covered.
+
+```bash
+vendor/bin/pyra check --strict
+vendor/bin/pyra diff --base origin/main --strict
+vendor/bin/pyra diff --base origin/main --coverage build/clover.xml
+```
+
+With `--strict`, a violation exits `1` (for CI). Without it, violations are printed but
+the command still exits `0`.
+
+## Config
+
+A `pyra.yaml` at the project root. Works the same whether you're on Symfony, Laravel or
+plain PHP — only the paths and the framework-specific dependencies change.
+
+### Symfony
 
 ```yaml
 pyra:
@@ -64,12 +75,12 @@ pyra:
             max_percentage: 35
         e2e:
             paths: [features]
-            counter: gherkin        # count Gherkin scenarios instead of PHPUnit methods
+            counter: gherkin        # .feature scenarios instead of PHPUnit methods
             max_percentage: 15
 
     diff:
         base: origin/main
-        sources:                    # which production areas expect which test levels
+        sources:                    # which areas expect which test levels
             - path: src/Domain
               expect: [unit]
             - path: src/Application
@@ -79,7 +90,7 @@ pyra:
             - config
 ```
 
-### Laravel example
+### Laravel
 
 ```yaml
 pyra:
@@ -91,55 +102,42 @@ pyra:
                 - Illuminate\Foundation\Testing\DatabaseTransactions
         integration:
             paths: [tests/Feature]
+
     diff:
         base: origin/main
         sources:
             - path: app/Domain
               expect: [unit]
+            - path: app/Http
+              expect: [integration]
 ```
 
-## Usage
+## What it actually catches
 
-```bash
-# Global pyramid check
-vendor/bin/pyra check --config pyra.yaml --strict
+- A class you changed that has no test at the level its area expects.
+- A unit test that pulls in an integration-only dependency.
+- A pyramid that has tipped over (more integration than unit), compared within one
+  counting style.
+- If you pass `--coverage`, the changed lines that no test executes.
 
-# Per-PR check against a base ref
-vendor/bin/pyra diff --base origin/main --strict
+## Where it stops
 
-# With real coverage (the only way "coverage" is reported)
-vendor/bin/pyra diff --base origin/main --coverage build/clover.xml
-```
+A few things worth knowing before you trust the output:
 
-Exit codes: violations + `--strict` → `1`; otherwise `0` (violations still printed).
-
-## What it detects
-
-- A changed class with no test at an expected level (**missing test** gate).
-- A unit test depending on an integration-only symbol (**impure test**).
-- An inverted pyramid (more integration than unit), within a single counting unit.
-- With coverage XML: changed lines that are not executed by any test.
-
-The search for tests covering a changed class spans the **whole** suite, not only the
-files in the diff — so an existing, unchanged test that already covers the change does
-**not** raise a false "missing test".
-
-## Honest limitations
-
-- **Static analysis answers presence, not coverage.** Without `--coverage`, Pyra says a
-  test *appears* missing — never that coverage is insufficient. The word "coverage" only
-  appears when a clover/cobertura XML is supplied.
-- **No "feature" concept.** Granularity is the changed class, aggregated per PR.
-- **Name mapping is heuristic.** A class referenced in a test but not exercised is a false
-  positive; a class exercised transitively (via a collaborator, reflection, container
-  wiring, or data providers) without being named is a false negative. Use `--coverage`
-  to close the gap.
-- **E2E / Gherkin cannot be name-mapped** (a `.feature` declares no PHP class). Use the
-  path heuristic or coverage for e2e.
-- **Per-level coverage needs per-suite coverage runs.** A single merged coverage file
-  cannot say which level covered a line.
-- **Supported test styles:** PHPUnit (methods `test*` / `#[Test]`) and Gherkin scenarios.
-  Pest closures are not yet counted.
+- Without a coverage file it can only tell you a test *looks* missing, never that
+  coverage is low. "Coverage" is only ever reported from a clover/cobertura XML you pass
+  in with `--coverage`.
+- There's no notion of a "feature" — the unit of work is the changed class, summed up
+  over the PR.
+- The class-to-test matching is by name. A test that mentions a class without really
+  exercising it is a false positive; a class hit only through a collaborator (or
+  reflection, or the container) without being named is a false negative. Coverage is how
+  you close that gap.
+- A `.feature` file names no PHP class, so e2e can't be name-matched — only the path
+  rules or coverage reach it.
+- Telling coverage apart *per level* needs one coverage run per suite; a single merged
+  file can't say which level hit a line.
+- It counts PHPUnit (`test*` / `#[Test]`) and Gherkin scenarios. Pest isn't counted yet.
 
 ## License
 
