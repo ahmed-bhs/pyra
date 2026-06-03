@@ -1,17 +1,18 @@
 # Pyra
 
 ![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
-![Symfony](https://img.shields.io/badge/Symfony-ready-000000?logo=symfony&logoColor=white)
-![Laravel](https://img.shields.io/badge/Laravel-ready-FF2D20?logo=laravel&logoColor=white)
+![PHPUnit](https://img.shields.io/badge/PHPUnit-supported-3C9CD7)
+![Gherkin](https://img.shields.io/badge/Gherkin-supported-23D96C)
 ![License](https://img.shields.io/badge/license-MIT-green)
-
-![Testing Pyramid](docs/testing-pyramid.jpg)
-
-> Illustration by [SketchingDev](https://sketchingdev.co.uk).
 
 Pyra looks at your tests and tells you two things: is the overall pyramid the right
 shape, and — on a given pull request — did the code you just changed get tested at the
 level it should be.
+
+It works on any PHP project — Symfony, Laravel or plain PHP — as long as the tests are
+written with **PHPUnit** (methods `test*` / `#[Test]`) or **Gherkin** scenarios. Pest is
+not supported yet, so a project whose tests are written only in Pest will report zero
+tests.
 
 It doesn't boot your app. It reads files and a YAML config, so it runs the same on
 Symfony, Laravel or a plain PHP project.
@@ -58,64 +59,22 @@ the command still exits `0`.
 
 ## Config
 
-A `pyra.yaml` at the project root. Works the same whether you're on Symfony, Laravel or
-plain PHP — only the paths and the framework-specific dependencies change.
-
-### Symfony
+Pyra reads a `pyra.yaml` at the project root. The shortest config that does something
+useful:
 
 ```yaml
 pyra:
-    enforce_ordering: true
-
     levels:
         unit:
             paths: [tests/Unit]
-            min_percentage: 60
             forbidden_dependencies:
                 - Doctrine\ORM\EntityManagerInterface
-                - Symfony\Bundle\FrameworkBundle\Test\KernelTestCase
-                - Zenstruck\Foundry\Test\ResetDatabase
         integration:
             paths: [tests/Integration]
-            max_percentage: 35
-        e2e:
-            paths: [features]
-            counter: gherkin        # .feature scenarios instead of PHPUnit methods
-            max_percentage: 15
-
-    diff:
-        base: origin/main
-        sources:                    # which areas expect which test levels
-            - path: src/Domain
-              expect: [unit]
-            - path: src/Application
-              expect: [unit, integration]
-        ignore:
-            - migrations
-            - config
 ```
 
-### Laravel
-
-```yaml
-pyra:
-    levels:
-        unit:
-            paths: [tests/Unit]
-            forbidden_dependencies:
-                - Illuminate\Foundation\Testing\RefreshDatabase
-                - Illuminate\Foundation\Testing\DatabaseTransactions
-        integration:
-            paths: [tests/Feature]
-
-    diff:
-        base: origin/main
-        sources:
-            - path: app/Domain
-              expect: [unit]
-            - path: app/Http
-              expect: [integration]
-```
+Every key — levels, percentages, counters, the `diff` block, ready-to-copy Symfony and
+Laravel examples — is documented in **[docs/configuration.md](docs/configuration.md)**.
 
 ## What it actually catches
 
