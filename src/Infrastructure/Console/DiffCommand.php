@@ -10,6 +10,7 @@ use AhmedBhs\Pyra\Application\Diff\FileClassifier;
 use AhmedBhs\Pyra\Application\Diff\SourceTestMapper;
 use AhmedBhs\Pyra\Application\FileInspector;
 use AhmedBhs\Pyra\Domain\Coverage\CoverageReport;
+use AhmedBhs\Pyra\Infrastructure\Console\Output\DiffReportFormatterRegistry;
 use AhmedBhs\Pyra\Infrastructure\Coverage\CoverageReportParser;
 use AhmedBhs\Pyra\Infrastructure\Git\GitDiffProvider;
 use AhmedBhs\Pyra\Infrastructure\YamlConfigLoader;
@@ -26,6 +27,7 @@ final class DiffCommand extends Command
     public function __construct(
         private readonly YamlConfigLoader $yamlConfigLoader = new YamlConfigLoader(),
         private readonly CoverageReportParser $coverageReportParser = new CoverageReportParser(),
+        private readonly DiffReportFormatterRegistry $diffReportFormatterRegistry = new DiffReportFormatterRegistry(),
     ) {
         parent::__construct();
     }
@@ -36,6 +38,7 @@ final class DiffCommand extends Command
             ->addOption('config', 'c', InputOption::VALUE_REQUIRED, 'Path to the configuration file', 'pyra.yaml')
             ->addOption('base', 'b', InputOption::VALUE_REQUIRED, 'Base git ref to diff against')
             ->addOption('coverage', null, InputOption::VALUE_REQUIRED, 'Path to a clover/cobertura coverage XML to assess changed-line coverage')
+            ->addOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format: table, json or github', 'table')
             ->addOption('strict', null, InputOption::VALUE_NONE, 'Exit with a non-zero status when a gate violation is found');
     }
 
@@ -70,51 +73,13 @@ final class DiffCommand extends Command
 
         $diffReport = $diffAnalyzer->analyze($changedFiles, $coverageReport);
 
-        $rows = [];
-        foreach ($diffReport->classStatuses as $classTestStatus) {
-            $missing = array_map(static fn ($level): string => $level->value, $classTestStatus->missingLevels());
-            $rows[] = [
-                $classTestStatus->className ?? $classTestStatus->sourceFile,
-                implode(', ', array_map(static fn ($level): string => $level->value, $classTestStatus->expectedLevels)),
-                implode(', ', array_map(static fn ($level): string => $level->value, $classTestStatus->coveredLevels)) ?: '-',
-                [] === $missing ? 'ok' : 'MISSING: '.implode(', ', $missing),
-                null === $classTestStatus->changedLineCoverage ? 'n/a' : \sprintf('%.1f%%', $classTestStatus->changedLineCoverage),
-            ];
-        }
+        $this->diffReportFormatterRegistry
+            ->get((string) $input->getOption('format'))
+            ->format($diffReport, $output);
 
-        if ([] !== $rows) {
-            $symfonyStyle->table(['Changed class', 'Expected', 'Tested at', 'Status', 'Changed-line coverage'], $rows);
-        }
-
-        if ([] !== $diffReport->impurities) {
-            $symfonyStyle->section('Impure changed tests');
-            $symfonyStyle->listing(array_map(
-                static fn ($impurity): string => \sprintf('%s depends on %s (behaves like a higher-level test).', $impurity->file, $impurity->offendingSymbol),
-                $diffReport->impurities,
-            ));
-        }
-
-        if ([] !== $diffReport->coverageWarnings) {
-            $symfonyStyle->section('Coverage');
-            $symfonyStyle->listing($diffReport->coverageWarnings);
-        }
-
-        if (!$diffReport->hasGateViolations()) {
-            $symfonyStyle->success('Changed code is backed by the expected test levels.');
-
-            return Command::SUCCESS;
-        }
-
-        $symfonyStyle->section('Missing tests');
-        $symfonyStyle->listing($diffReport->gateViolations);
-
-        if ((bool) $input->getOption('strict')) {
-            $symfonyStyle->error(\sprintf('%d missing-test gate violation(s).', \count($diffReport->gateViolations)));
-
+        if ($diffReport->hasGateViolations() && (bool) $input->getOption('strict')) {
             return Command::FAILURE;
         }
-
-        $symfonyStyle->warning(\sprintf('%d missing-test gate violation(s) (non-strict mode, exit 0).', \count($diffReport->gateViolations)));
 
         return Command::SUCCESS;
     }

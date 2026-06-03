@@ -52,10 +52,13 @@ don't get nagged about a class that's already covered.
 vendor/bin/pyra check --strict
 vendor/bin/pyra diff --base origin/main --strict
 vendor/bin/pyra diff --base origin/main --coverage build/clover.xml
+vendor/bin/pyra diff --base origin/main --format=github   # inline PR annotations
 ```
 
 With `--strict`, a violation exits `1` (for CI). Without it, violations are printed but
-the command still exits `0`.
+the command still exits `0`. `diff` can render as a `table` (default), `json`, or
+`github` annotations — see **[docs/github-actions.md](docs/github-actions.md)** for a
+ready-to-use workflow.
 
 ## Config
 
