@@ -55,4 +55,33 @@ final class DiffConfigTest extends TestCase
 
         self::assertNull($config->sourceAreaFor('src/Domain/Order.php'));
     }
+
+    public function testGlobMatchesAnyBoundedContext(): void
+    {
+        $config = new DiffConfig('origin/main', [
+            new SourceArea('src/*/Domain', [TestLevel::UNIT]),
+        ]);
+
+        self::assertSame([TestLevel::UNIT], $config->sourceAreaFor('src/DepositRequest/Domain/Order.php')?->expectedLevels);
+        self::assertSame([TestLevel::UNIT], $config->sourceAreaFor('src/EcoOrganization/Domain/Eco.php')?->expectedLevels);
+    }
+
+    public function testGlobDoesNotMatchAcrossSegments(): void
+    {
+        $config = new DiffConfig('origin/main', [
+            new SourceArea('src/*/Domain', [TestLevel::UNIT]),
+        ]);
+
+        self::assertNull($config->sourceAreaFor('src/DepositRequest/Infrastructure/Repo.php'));
+    }
+
+    public function testConcretePathBeatsGlobOfSameDepth(): void
+    {
+        $config = new DiffConfig('origin/main', [
+            new SourceArea('src/*/Infrastructure', [TestLevel::E2E]),
+            new SourceArea('src/DepositRequest/Infrastructure', [TestLevel::INTEGRATION]),
+        ]);
+
+        self::assertSame([TestLevel::INTEGRATION], $config->sourceAreaFor('src/DepositRequest/Infrastructure/Repo.php')?->expectedLevels);
+    }
 }

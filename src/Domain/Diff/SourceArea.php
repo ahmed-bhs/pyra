@@ -22,16 +22,34 @@ final readonly class SourceArea
         $normalizedPath = $this->normalizedPath();
         $normalizedFile = ltrim(str_replace('\\', '/', $filePath), '/');
 
-        return $normalizedFile === $normalizedPath || str_starts_with($normalizedFile, $normalizedPath.'/');
+        if (!str_contains($normalizedPath, '*')) {
+            return $normalizedFile === $normalizedPath || str_starts_with($normalizedFile, $normalizedPath.'/');
+        }
+
+        return 1 === preg_match($this->toRegex($normalizedPath), $normalizedFile);
     }
 
     /**
-     * Length of the declared path once normalized; used to pick the most
-     * specific area when several overlap (longest prefix wins).
+     * Specificity used to pick the most specific area when several overlap.
+     * Concrete path segments count; a "*" wildcard counts for nothing, so a
+     * literal path always beats a glob covering the same depth.
      */
     public function specificity(): int
     {
-        return \strlen($this->normalizedPath());
+        $literal = str_replace('*', '', $this->normalizedPath());
+
+        return \strlen($literal);
+    }
+
+    private function toRegex(string $globPath): string
+    {
+        $segments = explode('/', $globPath);
+        $pattern = implode('/', array_map(
+            static fn (string $segment): string => '*' === $segment ? '[^/]+' : preg_quote($segment, '#'),
+            $segments,
+        ));
+
+        return '#^'.$pattern.'(/.*)?$#';
     }
 
     private function normalizedPath(): string
