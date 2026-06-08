@@ -26,16 +26,16 @@ final class TableDiffReportFormatter implements DiffReportFormatter
         foreach ($diffReport->classStatuses as $classTestStatus) {
             $missing = array_map(static fn (TestLevel $level): string => $level->value, $classTestStatus->missingLevels());
             $rows[] = [
-                $classTestStatus->className ?? $classTestStatus->sourceFile,
+                $this->shortName($classTestStatus->className) ?? $classTestStatus->sourceFile,
                 implode(', ', array_map(static fn (TestLevel $level): string => $level->value, $classTestStatus->expectedLevels)),
                 implode(', ', array_map(static fn (TestLevel $level): string => $level->value, $classTestStatus->coveredLevels)) ?: '-',
-                [] === $missing ? 'ok' : 'MISSING: '.implode(', ', $missing),
+                [] === $missing ? 'ok' : 'missing: '.implode('/', $missing),
                 null === $classTestStatus->changedLineCoverage ? 'n/a' : \sprintf('%.1f%%', $classTestStatus->changedLineCoverage),
             ];
         }
 
         if ([] !== $rows) {
-            $symfonyStyle->table(['Changed class', 'Expected', 'Tested at', 'Status', 'Changed-line coverage'], $rows);
+            $symfonyStyle->table(['Changed class', 'Expected', 'Tested at', 'Status', 'Coverage'], $rows);
         }
 
         if ([] !== $diffReport->impurities) {
@@ -55,5 +55,16 @@ final class TableDiffReportFormatter implements DiffReportFormatter
             $symfonyStyle->section('Missing tests');
             $symfonyStyle->listing($diffReport->gateViolations);
         }
+    }
+
+    private function shortName(?string $className): ?string
+    {
+        if (null === $className) {
+            return null;
+        }
+
+        $position = strrpos($className, '\\');
+
+        return false === $position ? $className : substr($className, $position + 1);
     }
 }
