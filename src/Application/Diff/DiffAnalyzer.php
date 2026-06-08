@@ -62,6 +62,9 @@ final class DiffAnalyzer
             }
 
             $classStatus = $this->statusForChangedSource($changedFile, $sourceArea->expectedLevels, $coverageReport);
+            if (null === $classStatus) {
+                continue;
+            }
             $classStatuses[] = $classStatus;
 
             foreach ($classStatus->missingLevels() as $missingLevel) {
@@ -88,10 +91,15 @@ final class DiffAnalyzer
     /**
      * @param list<TestLevel> $expectedLevels
      */
-    private function statusForChangedSource(ChangedFile $changedFile, array $expectedLevels, ?CoverageReport $coverageReport): ClassTestStatus
+    private function statusForChangedSource(ChangedFile $changedFile, array $expectedLevels, ?CoverageReport $coverageReport): ?ClassTestStatus
     {
         $absolutePath = $this->projectRoot.\DIRECTORY_SEPARATOR.$changedFile->path;
-        $classNames = is_file($absolutePath) ? $this->classNameExtractor->extract((string) file_get_contents($absolutePath)) : [];
+        $classNames = is_file($absolutePath) ? $this->classNameExtractor->extractTestable((string) file_get_contents($absolutePath)) : [];
+
+        if ([] === $classNames) {
+            return null;
+        }
+
         $className = $classNames[0] ?? null;
 
         $coveredLevels = [];
