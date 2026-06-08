@@ -101,6 +101,24 @@ test referencing it at each expected level. A missing level is a gate violation.
 `--coverage <clover|cobertura.xml>` it also reports how much of the changed lines are
 executed.
 
+### Choosing `expect`: the lowest sufficient level, not one of each
+
+`expect` is the level at which a change *must* be exercised — not a demand for a unit
+**and** an integration **and** an e2e test on every class. Requiring all three per class
+manufactures the top-heavy, inverted pyramid that `pyra check` is meant to flag. Keep it
+minimal:
+
+- Most code: `[unit]`.
+- Areas whose correctness *is* the wiring (Doctrine repositories, adapters that talk to
+  real infrastructure): `[integration]`.
+- `[e2e]` belongs on a handful of explicitly declared critical journeys — never a
+  namespace-wide glob. Note that a Gherkin e2e suite names no PHP classes, so an
+  `expect: [e2e]` on a *source path* can only ever be satisfied through `--coverage`, not
+  name-matching; without coverage it stays a permanent (and useless) violation.
+
+Pyramid **shape** — "too many e2e, too few unit" — is the job of `pyra check` (ratios and
+ordering), not of per-class `expect`.
+
 ## Full examples
 
 ### Symfony

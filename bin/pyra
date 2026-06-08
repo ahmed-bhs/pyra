@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use AhmedBhs\Pyra\Infrastructure\Console\CheckCommand;
 use AhmedBhs\Pyra\Infrastructure\Console\DiffCommand;
+use AhmedBhs\Pyra\Infrastructure\Console\InitCommand;
 use Symfony\Component\Console\Application;
 
 $autoloads = [
@@ -31,5 +32,6 @@ if (!$loaded) {
 $application = new Application('pyra');
 $application->add(new CheckCommand());
 $application->add(new DiffCommand());
+$application->add(new InitCommand());
 
 $application->run();
