@@ -19,9 +19,23 @@ final readonly class SourceArea
 
     public function matches(string $filePath): bool
     {
-        $normalizedPath = ltrim(str_replace('\\', '/', $this->path), '/');
+        $normalizedPath = $this->normalizedPath();
         $normalizedFile = ltrim(str_replace('\\', '/', $filePath), '/');
 
         return $normalizedFile === $normalizedPath || str_starts_with($normalizedFile, $normalizedPath.'/');
+    }
+
+    /**
+     * Length of the declared path once normalized; used to pick the most
+     * specific area when several overlap (longest prefix wins).
+     */
+    public function specificity(): int
+    {
+        return \strlen($this->normalizedPath());
+    }
+
+    private function normalizedPath(): string
+    {
+        return ltrim(str_replace('\\', '/', $this->path), '/');
     }
 }

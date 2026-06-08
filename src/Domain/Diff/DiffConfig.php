@@ -32,12 +32,17 @@ final readonly class DiffConfig
 
     public function sourceAreaFor(string $filePath): ?SourceArea
     {
+        $best = null;
         foreach ($this->sources as $source) {
-            if ($source->matches($filePath)) {
-                return $source;
+            if (!$source->matches($filePath)) {
+                continue;
+            }
+
+            if (null === $best || $source->specificity() > $best->specificity()) {
+                $best = $source;
             }
         }
 
-        return null;
+        return $best;
     }
 }
